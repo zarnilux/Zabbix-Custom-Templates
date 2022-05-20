@@ -2,7 +2,7 @@
 
 Perform Website/DNS Server Availability Checks via Zabbix Active Agent on OPNSense.
 
-All Checks are performed direclty from the OPNSense, the results are transfered to the Zabbix Server.
+All Checks are performed directly from the OPNSense, the results are transfered to the Zabbix Server.
 
 The Template used two examples for the Checks: GoogleDNS and a fictive ExternalDB
 
