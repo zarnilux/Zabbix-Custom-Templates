@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export>
+    <version>5.0</version>
+    <date>2022-01-01T00:00:00Z</date>
+    <groups>
+        <group>
+            <name>Templates/Modules</name>
+        </group>
+    </groups>
+    <templates>
+        <template>
+            <template>Template Web-IO Thermometer</template>
+            <name>Template Web-IO Thermometer</name>
+            <description>Template Module Generic SNMP W&amp;T Web-IO Thermometer </description>
+            <templates>
+                <template>
+                    <name>Template Module ICMP Ping</name>
+                </template>
+            </templates>
+            <groups>
+                <group>
+                    <name>Templates/Modules</name>
+                </group>
+            </groups>
+            <applications>
+                <application>
+                    <name>General</name>
+                </application>
+                <application>
+                    <name>Temperature</name>
+                </application>
+            </applications>
+            <items>
+                <item>
+                    <name>System name</name>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>1.3.6.1.2.1.1.5.0</snmp_oid>
+                    <key>system.name</key>
+                    <delay>1h</delay>
+                    <history>2w</history>
+                    <trends>0</trends>
+                    <value_type>CHAR</value_type>
+                    <description>MIB: SNMPv2-MIB&#13;
+An administratively-assigned name for this managed node.By convention, this is the node's fully-qualified domain name.  If the name is unknown, the value is the zero-length string.</description>
+                    <inventory_link>NAME</inventory_link>
+                    <applications>
+                        <application>
+                            <name>General</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>DISCARD_UNCHANGED_HEARTBEAT</type>
+                            <params>1h</params>
+                        </step>
+                    </preprocessing>
+                    <triggers>
+                        <trigger>
+                            <expression>{diff()}=1 and {strlen()}&gt;0</expression>
+                            <name>System name has changed (new name: {ITEM.VALUE})</name>
+                            <priority>INFO</priority>
+                            <description>System name has changed. Ack to close.</description>
+                            <manual_close>YES</manual_close>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>System Temperature</name>
+                    <type>SNMP_AGENT</type>
+                    <snmp_oid>1.3.6.1.4.1.5040.1.2.3.1.3.1.1.1</snmp_oid>
+                    <key>system.temp</key>
+                    <delay>30s</delay>
+                    <history>2w</history>
+                    <value_type>FLOAT</value_type>
+                    <units>°C</units>
+                    <applications>
+                        <application>
+                            <name>Temperature</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>STR_REPLACE</type>
+                            <params>,
+.</params>
+                        </step>
+                        <step>
+                            <type>IN_RANGE</type>
+                            <params>-100
++100</params>
+                        </step>
+                        <step>
+                            <type>REGEX</type>
+                            <params>(.*)
+\1</params>
+                        </step>
+                    </preprocessing>
+                    <triggers>
+                        <trigger>
+                            <expression>{avg(5m)}&gt;{$TEMP_CRIT:&quot;{#SNMPVALUE}&quot;}&#13;
+or&#13;
+{last()}={$TEMP_CRIT_STATUS}</expression>
+                            <recovery_mode>RECOVERY_EXPRESSION</recovery_mode>
+                            <recovery_expression>{max(5m)}&lt;{$TEMP_CRIT:&quot;{#SNMPVALUE}&quot;}-3</recovery_expression>
+                            <name>{HOST.NAME} Temperature above Critical Threshold: {ITEM.LASTVALUE}</name>
+                            <priority>HIGH</priority>
+                            <description>This trigger uses temperature sensor values as well as temperature sensor status if available</description>
+                            <tags>
+                                <tag>
+                                    <tag>type</tag>
+                                    <value>custom-trigger</value>
+                                </tag>
+                            </tags>
+                        </trigger>
+                        <trigger>
+                            <expression>{avg(5m)}&gt;{$TEMP_WARN:&quot;{#SNMPVALUE}&quot;}&#13;
+or&#13;
+{last()}={$TEMP_WARN_STATUS}</expression>
+                            <recovery_mode>RECOVERY_EXPRESSION</recovery_mode>
+                            <recovery_expression>{max(5m)}&lt;{$TEMP_WARN:&quot;{#SNMPVALUE}&quot;}-3</recovery_expression>
+                            <name>{HOST.NAME} Temperature above Warning Threshold: {ITEM.LASTVALUE}</name>
+                            <priority>WARNING</priority>
+                            <description>This trigger uses temperature sensor values as well as temperature sensor status if available</description>
+                            <tags>
+                                <tag>
+                                    <tag>type</tag>
+                                    <value>custom-trigger</value>
+                                </tag>
+                            </tags>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>SNMP agent availability</name>
+                    <type>INTERNAL</type>
+                    <key>zabbix[host,snmp,available]</key>
+                    <delay>2m</delay>
+                    <history>7d</history>
+                    <applications>
+                        <application>
+                            <name>Status</name>
+                        </application>
+                    </applications>
+                    <valuemap>
+                        <name>zabbix.host.available</name>
+                    </valuemap>
+                    <triggers>
+                        <trigger>
+                            <expression>{max({$SNMP.TIMEOUT})}=0</expression>
+                            <name>No SNMP data collection</name>
+                            <opdata>Current state: {ITEM.LASTVALUE1}</opdata>
+                            <priority>WARNING</priority>
+                            <description>SNMP is not available for polling. Please check device connectivity and SNMP settings.</description>
+                            <dependencies>
+                                <dependency>
+                                    <name>Unavailable by ICMP ping</name>
+                                    <expression>{Template Web-IO Thermometer:icmpping.max(#3)}=0</expression>
+                                </dependency>
+                            </dependencies>
+                        </trigger>
+                    </triggers>
+                </item>
+            </items>
+            <macros>
+                <macro>
+                    <macro>{$SNMP.TIMEOUT}</macro>
+                    <value>5m</value>
+                </macro>
+                <macro>
+                    <macro>{$TEMP_CRIT}</macro>
+                    <value>32.0</value>
+                </macro>
+                <macro>
+                    <macro>{$TEMP_CRIT_LOW}</macro>
+                    <value>12.0</value>
+                </macro>
+                <macro>
+                    <macro>{$TEMP_CRIT_STATUS}</macro>
+                    <value>3</value>
+                </macro>
+                <macro>
+                    <macro>{$TEMP_DISASTER_STATUS}</macro>
+                    <value>4</value>
+                </macro>
+                <macro>
+                    <macro>{$TEMP_WARN}</macro>
+                    <value>27.5</value>
+                </macro>
+                <macro>
+                    <macro>{$TEMP_WARN_STATUS}</macro>
+                    <value>2</value>
+                </macro>
+            </macros>
+        </template>
+    </templates>
+    <value_maps>
+        <value_map>
+            <name>zabbix.host.available</name>
+            <mappings>
+                <mapping>
+                    <value>0</value>
+                    <newvalue>not available</newvalue>
+                </mapping>
+                <mapping>
+                    <value>1</value>
+                    <newvalue>available</newvalue>
+                </mapping>
+                <mapping>
+                    <value>2</value>
+                    <newvalue>unknown</newvalue>
+                </mapping>
+            </mappings>
+        </value_map>
+    </value_maps>
+</zabbix_export>
