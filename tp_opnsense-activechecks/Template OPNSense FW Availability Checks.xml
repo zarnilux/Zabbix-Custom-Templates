@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export>
+    <version>5.0</version>
+    <date>2022-01-01T00:00:00Z</date>
+    <groups>
+        <group>
+            <name>Templates/Network devices</name>
+        </group>
+    </groups>
+    <templates>
+        <template>
+            <template>Template OPNSense FW Availability Checks</template>
+            <name>Template OPNSense FW Availability Checks</name>
+            <description>Perform Active Checks on OPNSense via Zabbix Active Agent&#13;
+&#13;
+Check GoogleDNS &amp; ExternalDB Availability:&#13;
+- Ping Check Request&#13;
+- PingResponseTime</description>
+            <groups>
+                <group>
+                    <name>Templates/Network devices</name>
+                </group>
+            </groups>
+            <applications>
+                <application>
+                    <name>ExternalDB_ResponseTime-Check</name>
+                </application>
+            </applications>
+            <items>
+                <item>
+                    <name>pingtime.externaldb</name>
+                    <key>pingtime.externaldb</key>
+                    <delay>10s</delay>
+                    <value_type>FLOAT</value_type>
+                    <applications>
+                        <application>
+                            <name>ExternalDB_ResponseTime-Check</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>REGEX</type>
+                            <params>(\d+.\d+)
+\1</params>
+                            <error_handler>CUSTOM_VALUE</error_handler>
+                            <error_handler_params>0</error_handler_params>
+                        </step>
+                    </preprocessing>
+                    <triggers>
+                        <trigger>
+                            <expression>{max(#3)}=0</expression>
+                            <name>ExternalDB Unavailable by ICMP Ping</name>
+                            <priority>HIGH</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>pingtime.googledns</name>
+                    <key>pingtime.googledns</key>
+                    <delay>10s</delay>
+                    <value_type>FLOAT</value_type>
+                    <applications>
+                        <application>
+                            <name>ExternalDB_ResponseTime-Check</name>
+                        </application>
+                    </applications>
+                    <preprocessing>
+                        <step>
+                            <type>REGEX</type>
+                            <params>(\d+.\d+)
+\1</params>
+                            <error_handler>CUSTOM_VALUE</error_handler>
+                            <error_handler_params>0</error_handler_params>
+                        </step>
+                    </preprocessing>
+                    <triggers>
+                        <trigger>
+                            <expression>{max(#3)}=0</expression>
+                            <name>GoogleDNS Unavailable by ICMP Ping</name>
+                            <priority>HIGH</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+            </items>
+            <httptests>
+                <httptest>
+                    <name>ExternalDB-ResponseTime-Check</name>
+                    <application>
+                        <name>ExternalDB_ResponseTime-Check</name>
+                    </application>
+                    <delay>10s</delay>
+                    <steps>
+                        <step>
+                            <name>website.domain.tld</name>
+                            <url>https://website.domain.tld/checksite</url>
+                            <follow_redirects>NO</follow_redirects>
+                            <timeout>10s</timeout>
+                            <status_codes>200</status_codes>
+                        </step>
+                    </steps>
+                </httptest>
+            </httptests>
+        </template>
+    </templates>
+</zabbix_export>
